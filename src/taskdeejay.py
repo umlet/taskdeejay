@@ -35,8 +35,8 @@ def EXIT_INTERNAL(text):
 def printu(s):  # to suppress ok actions, or to suppress completely in pipe
     print(s)
 
-def printe(s):
-    print(s, file=sys.stderr)
+#def printe(s):
+#    print(s, file=sys.stderr)
 
 def printh(s):  # to suppress hints
     if CONF.v("show_hints") == 1:
@@ -271,8 +271,8 @@ class Conf:
     def conf(self, fname):
         tmp = file2ls(fname, allow_empty=True)
         for s in tmp:
-            tmp = " ".join(list(shlex.shlex(s)))    # ugly 1, removes comments
-            ls = shlex.split(tmp)                   # ugly 2, removes enclosing quotation
+            tmp = " ".join(list(shlex.shlex(s)))    #todo removes comments
+            ls = shlex.split(tmp)                   #todo removes enclosing quotation
             tmp = " ".join(ls[1:])
             self.set(ls[0], tmp)
 

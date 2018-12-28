@@ -221,7 +221,8 @@ class Glob():
     name_conffile_user_override = "conf_user_override.txt"
     path_conffile_user_override = path_confdir + "/" + name_conffile_user_override
     path_tagspace_default = path_confdir + "/" + token_tagspace
-  
+
+
 
 class Conf:
     def __init__(self):

@@ -216,14 +216,14 @@ class Glob():
     path_home = expanduser("~")
     name_confdir = ".tj"
     path_confdir = path_home + "/" + name_confdir
-    name_conffile_default = "conf_default.txt"
+    name_conffile_default = "conf_default.txt" #todo conf_user_default
     path_conffile_default = path_confdir + "/" + name_conffile_default
     name_conffile_user_override = "conf_user_override.txt"
     path_conffile_user_override = path_confdir + "/" + name_conffile_user_override
     path_tagspace_default = path_confdir + "/" + token_tagspace
 
 
-
+#todo only load conf if needed
 class Conf:
     def __init__(self):
         self.d_V = {}  # types: s, i, f

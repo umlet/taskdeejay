@@ -1,0 +1,5 @@
+
+tj tag issue1 issue2 type=epic
+
+tj issue1 issue2 --tag type=epic
+

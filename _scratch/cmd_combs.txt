@@ -1,5 +1,59 @@
 
-tj tag issue1 issue2 type=epic
+tj  tag issue1 issue2  tname1=foo  [maybe allow later]
 
-tj issue1 issue2 --tag type=epic
+tj  issue1 issue2  --tag tname1=foo tname2=bar
 
+tj  tag issue1 issue2 -- tname1=foo tname2=bar
+
+
+tj  untag???
+
+
+
+tj  add dir1 dir2  [maybe allow later]
+
+tj  remove??? [how to best unambiguate?]
+
+
+
+tj  ls
+tj  ls -- name tagspace
+-- or --
+tj  ls --get name tagspace  [also bad/inconsistent/double printout]
+
+tj  ll
+
+
+
+tj  --config-get
+
+tj  --config-set
+
+
+
+tagspace:
+tj  ls dir1 dir2 -- tagspace  #use ls and tagspace as potential tag;  UGLY, and not really working because on subdirs
+tj  info dir1 dir2 -- tagspace
+
+tj  tag  (maybe just shows infos of valid tags/content of tagspace)
+
+tj  issue1 --ls tagspace  [better! than below]
+tj  issue1 --tag-get tagspace
+
+tj  tagspace-get  [??????]
+
+
+
+
+
+
+#optional
+tj  new issue1 issue2   [required at all?]
+
+
+
+
+###all
+
+init
+reset

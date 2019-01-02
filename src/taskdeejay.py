@@ -38,73 +38,13 @@ class Glob():
     path_home = expanduser("~")
     name_confdir = ".tj"
     path_confdir = path_home + "/" + name_confdir
-    name_conffile_default = "conf_default.txt" #todo conf_user_default
+    name_conffile_default = "config.json" #todo conf_user_default
     path_conffile_default = path_confdir + "/" + name_conffile_default
     name_conffile_user_override = "conf_user_override.txt"
     path_conffile_user_override = path_confdir + "/" + name_conffile_user_override
     path_tagspace_default = path_confdir + "/" + token_tagspace
 
 
-#todo only load conf if needed
-class Conf:
-    def __init__(self):
-        self.d_V = {}  # types: s, i, f
-        self.d_V["show_hints"] = ["i", 1]
-        self.d_V["del_m"] = ["s", " "]
-        self.d_V["l_tags"] = ["s", "n t s p o"]
-        self.d_V["ll_tags"] = ["s", "n t s p o i pn"]
-        self.d_V["use_cur_dir"] = ["i", 1]
-
-    @staticmethod
-    def default():
-        tmp = [
-            "",
-            "###",
-            "show_hints             1                               # turn hints on/off",
-            "",
-            "###",
-            "del_m                  |                             # column delimiter for machine output",
-            "",
-            "###",
-            "l_tags                 name type status prio owners    # default tags for '-l' (could also be given as 'n t s p o')",
-            "",
-            "###",
-            "ll_tags                n t s p o i pn                  # default tags for '-ll'",
-            "",
-            "###",
-            "use_cur_dir            1                               # use current dir as default issue if no issues are given",
-            ""
-        ]
-        return tmp
-
-    def v(self, name):
-        if name not in self.d_V:  raise ESys("Unknown global variable '%s'" % name)
-        return self.d_V[name][1]
-
-    def p(self):
-        for key in sorted(self.d_V):
-            print("%s %s" % (key, str(self.d_V[key][1])))
-
-    def set(self, name, s_value):
-        if name not in self.d_V:  raise ESys("Unknown global variable '%s'" % name)
-        success, v_new = s2x(s_value, self.d_V[name][0])
-        if not success:  raise ESys(v_new)
-        self.d_V[name][1] = v_new
-
-    def conf(self, fname):
-        tmp = file2ls(fname, allow_empty=True)
-        for s in tmp:
-            tmp = " ".join(list(shlex.shlex(s)))    #todo removes comments
-            ls = shlex.split(tmp)                   #todo removes enclosing quotation
-            tmp = " ".join(ls[1:])
-            self.set(ls[0], tmp)
-
-    def save(self, fname):
-        lls = []
-        for k in sorted(self.d_V):
-            ls = [k, str(self.d_V[k][1])]
-            lls.append(ls)
-        lls2file(fname, lls)
 
 
 
@@ -853,8 +793,30 @@ def run(argv):
             tmp = json_rec(".")
             print(json.dumps(tmp, indent=4))
 
-        elif cmd == "--init":
-            INIT()
+
+        elif cmd == "--config-set":
+            ls = get_argls(cmd, argv)
+            if len(ls) == 0:
+                raise ESys("--config-set: no arguments given")
+            CONF.set(ls[0], ls[1:])
+
+        elif cmd == "--config-get":
+            ls = get_argls(cmd, argv)
+            if len(ls) == 0:
+                print(CONF.dumps())
+            else:
+                for s in ls:
+                    print(CONF.get(s))
+
+        elif cmd == "--config-init":
+            config_init()
+
+
+
+
+
+
+
         elif cmd == "--reset":
             RESET()
 
@@ -876,22 +838,29 @@ def main(argv):
     if len(argv) == 0:
         usage()
 
+    load_config = not ( argv[0] == "--config-ignore" )
+
+    if "--config-init" in argv:
+        if "--config-init" in argv[1:]:  raise ESys("'--config-init' must be used as first argumnent")
+        config_init()
+        argv.pop(0)
+
     useconf = True
-    if argv[0] in ["--noconf", "--init", "--reset"]:
+    if argv[0] in ["--config-ignore", "--config-init", "--reset"]:
         useconf = False
-        if argv[0] == "--noconf":
+        if argv[0] == "--config-ignore":
             argv.pop(0)
     if useconf:
         fname = Glob.path_conffile_default
         if isfile(fname):
-            CONF.conf(fname)
+            CONF.load(fname)
 
     run(argv)
 
 
-def INIT():
-    printu("Setting up configuration..")
 
+
+def init():
     dname = Glob.path_confdir
     if isdir(dname):
         printu("Config dir '%s' already exists" % dname)
@@ -899,22 +868,19 @@ def INIT():
         os.mkdir(dname)
         printu("Config dir '%s' created" % dname)
 
+def config_init():
+    init()
     fname = Glob.path_conffile_default
-    if isfile(fname):
-        printu("Config file '%s' already exists" % fname)
-    else:
-        ls2file(fname, [CONF.dumps()])
-        printu("Config file '%s' created" % fname)
+    ls2file(fname, [CONF.dumps()])
+    printu("Default config file '%s' created" % fname)
 
+def tagspace_init():
+    init()
     fname = Glob.path_tagspace_default
-    if isfile(fname):
-        printu("Default tagspace '%s' already exists" % fname)
-    else:
-        ls2file(fname, TagTypeHandler.default())
-        printu("Default tagspace '%s' created" % fname)
+    ls2file(fname, TagTypeHandler.default())
+    printu("Default tagspace '%s' created" % fname)
 
     printh("For a multi-user setup, a shared tagspace should be used; use the '-TS' command to create one", CONF.get("show-hints"))
-
 
 def RESET():
     dname = Glob.path_confdir
@@ -923,8 +889,8 @@ def RESET():
         return
 
     shutil.rmtree(dname)
-    printu("Config dir and default tagspace deleted")
-    printh("Use '--init' to re-create", CONF.get("show-hints"))
+    printu("User config and tagspace deleted")
+    printh("Use '--config-init' and '--tagspace-init' to re-create", CONF.get("show-hints"))
 
 
 if __name__ == '__main__':

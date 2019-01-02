@@ -79,7 +79,7 @@ def get_args(cmd, argv, l_type):  # helper function to process command line argu
 def get_argls(cmd, argv):  # helper function to process command line arguments with variable-length, option-delimited string sub-parameters
     RET = []
     for arg in argv:
-        if arg.startswith("-"):
+        if arg.startswith("--"):
             break
         RET.append(arg)
     for i in range(len(RET)):

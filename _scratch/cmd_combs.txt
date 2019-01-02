@@ -1,3 +1,9 @@
+--config-get
+--config-set
+--config-init  [default]
+--config-save  [new settings are stored]
+
+
 
 tj  tag issue1 issue2  tname1=foo  [maybe allow later]
 

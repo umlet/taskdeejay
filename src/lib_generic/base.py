@@ -27,10 +27,63 @@ def printh(s, show):  # to suppress hints
         print("(" + s + ")")
 
 
-# todo
+# todo: more, prefix, msgid-logic..
 # updated print helpers
-#pr_error(s):
+class color:
+    LIGHTRED = '\033[91m'
+    LIGHTGREEN = '\033[92m'
+    LIGHTYELLOW = '\033[93m'
+    LIGHTBLUE = '\033[94m'
+    LIGHTMAGENTA = '\033[95m'
+    LIGHTCYAN = '\033[96m'
 
+    LIGHTGRAY = '\033[37m'
+
+    DARKGRAY = '\033[90m'
+    
+    RED = '\033[31m'
+    GREEN = '\033[32m'
+    YELLOW = '\033[33m'
+    BLUE = '\033[34m'
+    MAGENTA = '\033[35m'
+    CYAN = '\033[36m'
+
+    DARKCYAN = '\033[36m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    END = '\033[0m'
+
+def print_error(s, use_colors=True, prefix=False):
+    if use_colors:
+        print(color.RED + s + color.END)
+    else:
+        print(s)
+
+def print_warn(s, use_colors=True, prefix=False):
+    if use_colors:
+        print(color.YELLOW + s + color.END)
+    else:
+        print(s)
+
+def print_info(s, use_colors=True, prefix=False):
+    if use_colors:
+        print(color.LIGHTBLUE + s + color.END)
+    else:
+        print(s)
+
+def print_ok(s, use_colors=True, prefix=False):
+    if use_colors:
+        print(color.GREEN + s + color.END)
+    else:
+        print(s)
+
+def print_hint(s, use_colors=True, prefix=False, show_hints=True):
+    if show_hints != 1:  return
+    s = "(" + s + ")"
+    if use_colors:
+        print(color.LIGHTBLUE + s + color.END)
+    else:
+        print(s)
 
 
 

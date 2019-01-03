@@ -21,52 +21,51 @@ Issue directories can still contain normal files, for example deliverables, as w
 START TUTORIAL:
 
 1. First-time setup (only run once):
->{EXENAME} -INIT                                                # set up some tag definitions (a 'tagspace') and editable config files
+>{EXENAME} --config-init --tagspace-init                        # set up some tag definitions (a 'tagspace') and editable config files
 
 2. Create and tag an issue:
 >mkdir myProject
->{EXENAME} myProject -new                                       # make directory into a tracked issue
->{EXENAME} myProject -tag type=project status=inpr              # set some tags
->{EXENAME} myProject -i                                         # get info on issue
+>{EXENAME} myProject --add                                      # make directory into a tracked issue
+>{EXENAME} myProject --set type=project status=inpr             # set some tags
+>{EXENAME} myProject --get                                      # get info on issue
 
 3. Create and tag three more issues, faster:
 >cd myProject
->{EXENAME} myFirstEpic -n -t type=epic s=inpr
->{EXENAME} mySecondEpic myThirdEpic -n -t t=epic s=todo p=hi o+Barbara
+>{EXENAME} myFirstEpic --add --set type=epic s=inpr
+>{EXENAME} mySecondEpic myThirdEpic --add --set t=epic s=todo p=hi o+Barbara
 
 4. List issues:
->{EXENAME} -l                                                   # list issues (and their tags) in current directory
->{EXENAME} -l name status id    (or: '-l n s i')                # the same, but show only some tags 
->{EXENAME} -ll                                                  # more info
+>{EXENAME} --ls                                                 # list issues (and their tags) in current directory
+>{EXENAME} --ls name status id    (or: '--ls n s i')            # the same, but show only some tags 
+>{EXENAME} --ll                                                 # more info
 
 
 
 USAGE:
 
 Creating issues:
->{EXENAME} <dir1> <dir2> .. -n[ew]                              # create issues from directories (and create dirs if needed)
+>{EXENAME} <dir1> <dir2> .. --add                               # create issues from directories
 
 Tagging:
 >{EXENAME} -ts                                                  # show valids tags for current dir
->{EXENAME} <dir1> <dir2> .. -t[ag] <tag1>=<v1> <tag2>=<v2> ..   # tag issues
->{EXENAME} -t[ag] <tag1>=<v1> ..                                # no issues given -> tag current directory/issue
+>{EXENAME} <dir1> <dir2> .. --set <tag1>=<v1> <tag2>=<v2> ..    # tag issues
 
 Reports:
->{EXENAME} -l                                                   # list issues in current dir with default tags
->{EXENAME} -l <tag1> <tag2> ..                                  # list with specific tags
->{EXENAME} -ll                                                  # list with most tags
->{EXENAME} -i[nfo]                                              # info on current dir/issue
->{EXENAME} <dir1> <dir2> .. -i                                  # info on issues
+>{EXENAME} --ls                                                 # list issues in current dir with default tags
+>{EXENAME} --ls <tag1> <tag2> ..                                # list with specific tags
+>{EXENAME} --ll                                                 # list with most tags
+>{EXENAME} --get
+>{EXENAME} <dir1> <dir2> .. --get status                        # info subset on multiple issues
 
 Command combination/pipe:
->{EXENAME} <dir> -n -t <tag1>=<v1> -i                           # creates, tags, and shows info on issue
+>{EXENAME} <dir> --add --set <tag1>=<v1> --get                  # creates, tags, and shows info on issue
 
 Configuration:
->{EXENAME} -INIT                                                # create config dir in home
->{EXENAME} -RESET                                               # remove config dir in home
+>{EXENAME} --config-init --tagspace-init                        # create config dir/file and tagspace
+>{EXENAME} --reset                                              # remove config dir
 
->{EXENAME} -p conf                                              # print global variables (e.g., quiet,..)
->{EXENAME} -set <variable> <value>                              # temporarily override config variable
+>{EXENAME} --config-get                                         # print config settings
+>{EXENAME} --config-set <variable> <value1> [<value2> ..]       # temporarily override config variable
 
 """
     print(msg.replace("{EXENAME}", exename()), file=sys.stderr, end="")

@@ -43,8 +43,6 @@ class Glob():
     path_confdir = path_home + "/" + name_confdir
     name_conffile_default = "config.json" #todo conf_user_default
     path_conffile_default = path_confdir + "/" + name_conffile_default
-    #name_conffile_user_override = "conf_user_override.txt"
-    #path_conffile_user_override = path_confdir + "/" + name_conffile_user_override
     path_tagspace_default = path_confdir + "/" + token_tagspace
 
 
@@ -67,9 +65,6 @@ class Direc():
         # parent
         tmp = "/".join( self.fullname.split("/")[:-1] )  #todo Windows compatibility
         self.parentname = os.path.basename(tmp)
-        #print("XXXXXXXXXXXX" + self.parentname)
-
-        #self.infix_current = "current " if self.name_ == "." else ""
 
 
 class TagFile():
@@ -525,24 +520,19 @@ class TagTypeHandler():
 
 
 
+def pr_e(s):  print_error(s, use_colors=CONF.get("use-colors"))
+def pr_w(s):  print_warn(s, use_colors=CONF.get("use-colors"))
+def pr_i(s):  print_info(s, use_colors=CONF.get("use-colors"))
+def pr_o(s):  print_ok(s, use_colors=CONF.get("use-colors"))
+def pr_h(s):  print_hint(s, use_colors=CONF.get("use-colors"), show_hints=CONF.get("show-hints"))
 
 
-def cmd_add(scope):
-    for s in scope:
-        if not isdir(s):
-            printu("Directory '%s' not found" % s)
-            continue
+def msgs__dir_is_no_issue(dname):
+    pr_e("Directory '%s' is not yet tracked as issue" % dname)
+    pr_h("Use '%s %s --add' to add it as tracked issue" % (exename(), dname))
 
-        if isiss(s):
-            printu("Directory '%s' is already added as tracked issue" % s)
-            continue
-
-        os.mkdir("%s/%s" % (s, Glob.token_metadir))
-        uuid4 = str(uuid.uuid4())
-        ls2file("%s/%s/%s" % (s, Glob.token_metadir, Glob.token_id_tag), [uuid4])
-
-        printu("Directory '%s' added as tracked issue" % s)
-
+def msgs__issue_dir_not_found(dname):
+    pr_e("Issue directory '%s' not found" % dname)
 
 
 def TS(scope):
@@ -559,17 +549,23 @@ def TS(scope):
     return scope
 
 
-class color:
-    PURPLE = '\033[95m'
-    CYAN = '\033[96m'
-    DARKCYAN = '\033[36m'
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    END = '\033[0m'
+
+
+def cmd_add(scope):
+    for s in scope:
+        if not isdir(s):
+            pr_e("Directory '%s' not found" % s)
+            continue
+
+        if isiss(s):
+            pr_w("Directory '%s' is already added as tracked issue" % s)
+            continue
+
+        os.mkdir("%s/%s" % (s, Glob.token_metadir))
+        uuid4 = str(uuid.uuid4())
+        ls2file("%s/%s/%s" % (s, Glob.token_metadir, Glob.token_id_tag), [uuid4])
+
+        pr_o("Directory '%s' added as tracked issue" % s)
 
 
 def cmd_get(scope):  # todo list of fields
@@ -589,31 +585,28 @@ def cmd_get(scope):  # todo list of fields
                     lls.append(tf.info())
 
             printls(lls2ls(lls, delimiter="   "))
-            continue
 
-        if isdir(dname):
-            direc = Direc(dname)
-            printu("The directory '%s' is not yet tracked as issue" % (direc.name))
-            printh("Use 'tj <dir> --add' to start tracking it", CONF.get("show-hints"))
-            continue
-
-        # todo print something in lls (???)
-        printu("'%s' is not a directory" % dname)
+        elif isdir(dname):
+            msgs__dir_is_no_issue(dname)
+        else:
+            msgs__issue_dir_not_found(dname)
 
 
-
-def tag(scope, ls):
+def cmd_set(scope, ls):
     for dname in scope:
         if isiss(dname):
             issue = Issue(dname)
             for setter in ls:
                 try:
                     s_msg = issue.set(setter)
-                    print("ok: %s:%s - %s" % (issue.name, setter, s_msg))
+                    pr_o("ok: %s:%s - %s" % (issue.name, setter, s_msg))
                 except EUser as e:
-                    print("ERROR: %s:%s - %s" % (issue.name, setter, e))
+                    pr_e("ERROR: %s:%s - %s" % (issue.name, setter, e))
+        
+        elif isdir(dname):
+            msgs__dir_is_no_issue(dname)
         else:
-            print("ERROR: '%s' is not a valid issue" % dname)
+            msgs__issue_dir_not_found()
 
 
 def cmd_ls(scope, l_cols):
@@ -628,7 +621,7 @@ def cmd_ls(scope, l_cols):
                 issue = Issue(s)
                 lls.append(issue.li(l_cols))
     printls(lls2ls(lls))
-    return SCOPE
+    return SCOPE  # todo hande scope-changing functions
 
 
 
@@ -639,13 +632,15 @@ def cmd_ls(scope, l_cols):
 
 CONF = TypedKeyValue(   {   "show-hints": "i", 
                             "del-m": "s", 
-                            "l-tags": "ls",
-                            "ll-tags": "ls"
+                            "ls-tags": "ls",
+                            "ll-tags": "ls",
+                            "use-colors": "i"
                         }, 
                         {   "show-hints": 1,
                             "del-m": " ",
-                            "l-tags": ["n","t","s","p","o"],
-                            "ll-tags": ["n","t","s","p","o","i","pn"]
+                            "ls-tags": ["n","t","s","p","o"],
+                            "ll-tags": ["n","t","s","p","o","i","pn"],
+                            "use-colors": 1
                         })
 _CONF_dflt = copy.deepcopy(CONF)
 
@@ -676,7 +671,7 @@ def run(argv):
 
         if cmd in ["--add"]:
             if len(SCOPE) == 0:
-                raise ESys("'--add': no directories specified to add as tracked issues")  # todo better msg
+                raise ESys("'--add': no directories specified")  # todo better msg
             cmd_add(SCOPE)
 
         elif cmd == "-TS":
@@ -696,11 +691,10 @@ def run(argv):
             cmd_get(SCOPE)  # todo select field
 
         elif cmd in ["--set"]:
-            if len(SCOPE) == 0:
-                raise ESys("'--set': no issues specified to tag")
-                continue
+            if len(SCOPE) == 0:  raise ESys("'--set': no issue directories specified")
+            # todo also check len(ls) and raise exception here !!
             ls = get_argls(cmd, argv)
-            tag(SCOPE, ls)
+            cmd_set(SCOPE, ls)
 
         elif cmd == "--tagspace-get":
             if len(SCOPE) == 0:
@@ -710,15 +704,15 @@ def run(argv):
                     issue = Issue(s)
                     fname = issue.fname_tagspace
                     if fname == "":
-                        print("No tagspace found for issue '%s'" % issue.name)
+                        pr_e("No tagspace found for issue '%s'" % issue.name)
                         continue
 
                     print("Issue: '%s'" % issue.name)
                     print("Tagspace: '%s'" % issue.fname_tagspace)
 
                     issue.tth.p()  # todo print outside issue, just get lls..
-                #else:
-                #    print("'%s' is a directory")
+                else:  # todo copy tamplate of error msgs from above
+                    pr_e("'%s' is not a tracked issue" % s)
 
         elif cmd in ["--ls", "--ll"]:
             if len(SCOPE) == 0:
@@ -726,7 +720,7 @@ def run(argv):
             ls = get_argls(cmd, argv)
 
             if ls == []:
-                ls = CONF.get("l-tags")
+                ls = CONF.get("ls-tags")
                 if cmd == "--ll":
                     ls = CONF.get("ll-tags")
 
@@ -748,8 +742,7 @@ def run(argv):
 
         elif cmd == "--config-set":
             ls = get_argls(cmd, argv)
-            if len(ls) == 0:
-                raise ESys("--config-set: no arguments given")
+            if len(ls) == 0:  raise ESys("--config-set: no arguments given")
             CONF.set(ls[0], ls[1:])
 
         elif cmd == "--config-get":
@@ -769,10 +762,6 @@ def run(argv):
         elif cmd == "--tagspace-init":
             tagspace_init()
 
-
-
-
-
         elif cmd == "--reset":
             RESET()
 
@@ -782,8 +771,7 @@ def run(argv):
             else:
                 raise ESys("Unknown command line option '%s'" % cmd)
 
-    #if len(SCOPE) != 0 and autoscope == True:
-    #    info(SCOPE, False)
+
 
 
 
@@ -808,42 +796,42 @@ def main(argv):
 
 def init0():
     dname = Glob.path_confdir
-    if isdir(dname):
-        printu("Config dir '%s' already exists" % dname)
-    else:
+    if not isdir(dname):
         os.mkdir(dname)
-        printu("Config dir '%s' created" % dname)
 
 def config_save(d):
     init0()
     fname = Glob.path_conffile_default
     ls2file(fname, [d.dumps()])
-    printu("Config file '%s' created" % fname)
+    pr_o("Config file '%s' created" % fname)
 
 def tagspace_init():
     init0()
     fname = Glob.path_tagspace_default
     ls2file(fname, TagTypeHandler.default())
-    printu("Default tagspace '%s' created" % fname)
-
-    printh("For a multi-user setup, a shared tagspace should be used; use the '-TS' command to create one", CONF.get("show-hints"))
+    pr_o("Default tagspace '%s' created" % fname)
+    pr_h("For a multi-user setup, a shared tagspace should be used; use '--tagspace-create'")
 
 def RESET():
     dname = Glob.path_confdir
     if not isdir(dname):
-        printu("Config dir does not exist; nothing to reset")
+        pr_i("Config dir does not exist; nothing to reset")
         return
 
     shutil.rmtree(dname)
-    printu("User config and tagspace deleted")
-    printh("Use '--config-init' and '--tagspace-init' to re-create", CONF.get("show-hints"))
+    pr_o("User config and tagspace deleted")
+    pr_h("Use '--config-init' and '--tagspace-init' to re-create")
+
+
 
 
 if __name__ == '__main__':
     try:
         main(sys.argv[1:])
     except ESys as e:
-        EXIT("%s" % e)
+        pr_e("ERROR_FATAL: %s" % e)
+        sys.exit(99)
     except ESysInt as e:
-        EXIT_INTERNAL("%s" % e)
+        pr_e("ERROR_FATAL_INTERNAL: %s" % e)
+        sys.exit(199)
 

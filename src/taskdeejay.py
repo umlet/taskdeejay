@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
+import copy
 import json
 import os
 import platform
 import shlex
 import shutil
 import sys
+import uuid
+
 from os.path import expanduser
 from os.path import isfile
 from os.path import isdir
@@ -19,7 +22,7 @@ from lib_tj.usage import *
 #from signal import signal, SIGPIPE, SIG_DFL
 #signal(SIGPIPE, SIG_DFL)
 
-VERSION = "TaskDeejay 0.1 (prototype), 2018-, Martin Auer, www.taskdeejay.com"
+VERSION = "TaskDeejay 0.11 (prototype), 2018-, Martin Auer, www.taskdeejay.com"
 
 
 
@@ -40,8 +43,8 @@ class Glob():
     path_confdir = path_home + "/" + name_confdir
     name_conffile_default = "config.json" #todo conf_user_default
     path_conffile_default = path_confdir + "/" + name_conffile_default
-    name_conffile_user_override = "conf_user_override.txt"
-    path_conffile_user_override = path_confdir + "/" + name_conffile_user_override
+    #name_conffile_user_override = "conf_user_override.txt"
+    #path_conffile_user_override = path_confdir + "/" + name_conffile_user_override
     path_tagspace_default = path_confdir + "/" + token_tagspace
 
 
@@ -493,7 +496,7 @@ class TagTypeHandler():
             if k.startswith("_"):  continue
             tt = self.d_TT[k]
             lls.append([tt.name, tt.shortname, tt.desc_allowed, tt.tname])
-        p(lls2ls(lls, l_align=["<", "^", "<", "<"], delimiter=" | "))
+        printls(lls2ls(lls, l_align=["<", "^", "<", "<"], delimiter=" | "))
 
     @staticmethod
     def hlp_condense_str(s, valid_chars):
@@ -524,30 +527,22 @@ class TagTypeHandler():
 
 
 
-def new(scope):
+def cmd_add(scope):
     for s in scope:
-        if isiss(s):
-            printu("Directory '%s' exists and is already added as tracked issue" % s)
+        if not isdir(s):
+            printu("Directory '%s' not found" % s)
             continue
 
-        infix = ""
-        if not isdir(s):
-            exe("mkdir %s" % s)
-            infix = "created and "
+        if isiss(s):
+            printu("Directory '%s' is already added as tracked issue" % s)
+            continue
 
-        exe("mkdir %s/%s" % (s, Glob.token_metadir))
-        if platform.system() == "Darwin":
-            lo,le = exe("uuidgen")
-        else:
-            lo,le = exe("cat /proc/sys/kernel/random/uuid")
+        os.mkdir("%s/%s" % (s, Glob.token_metadir))
+        uuid4 = str(uuid.uuid4())
+        ls2file("%s/%s/%s" % (s, Glob.token_metadir, Glob.token_id_tag), [uuid4])
 
-        if len(lo) != 1:  raise ESys("create: error in creating UUID")
-        tjID = lo[0]
-        exe("echo '%s' > %s/%s/%s" % (tjID, s, Glob.token_metadir, Glob.token_id_tag))
+        printu("Directory '%s' added as tracked issue" % s)
 
-        printu("Directory '%s' %sadded as issue" % (s, infix))
-
-    return scope
 
 
 def TS(scope):
@@ -577,21 +572,14 @@ class color:
     END = '\033[0m'
 
 
-def info(scope, expert):
+def cmd_get(scope):  # todo list of fields
     for dname in scope:
         if isiss(dname):
             issue = Issue(dname)
 
-            lls = []  # todo one scope higher
+            lls = []
 
-            # print("Issue: " + issue.name)
             lls.append(["Issue: '" + issue.fullname + "'", ""])
-            #if expert == True:
-            #    if issue.fname_tagspace == "":
-            #        # printu("Tagspace not defined; use '-INIT' to create default tagspace, or '-TS' the create shared one")
-            #        lls.append(["Tagspace: <not defined>", "(tagspace not defined; use '-INIT' to create default tagspace, or '-TS' the create shared one)"])
-            #    else:    
-            #        lls.append(["Tagspace: " + issue.fname_tagspace, ""])
 
             for k, tv in sorted(issue.d_tagvirt.items()):
                 lls.append(tv.info())
@@ -600,20 +588,18 @@ def info(scope, expert):
                 if not k.startswith("_"):
                     lls.append(tf.info())
 
-            p(lls2ls(lls, delimiter="   "))
+            printls(lls2ls(lls, delimiter="   "))
             continue
 
         if isdir(dname):
             direc = Direc(dname)
             printu("The directory '%s' is not yet tracked as issue" % (direc.name))
-            printu("(Use 'tj %s -new' to add)" % direc.name)
-            # todo print something in lls
+            printh("Use 'tj <dir> --add' to start tracking it", CONF.get("show-hints"))
             continue
 
-        # todo print something in lls
+        # todo print something in lls (???)
         printu("'%s' is not a directory" % dname)
 
-    return scope
 
 
 def tag(scope, ls):
@@ -623,14 +609,14 @@ def tag(scope, ls):
             for setter in ls:
                 try:
                     s_msg = issue.set(setter)
-                    print("ok %s:%s - %s" % (issue.name, setter, s_msg))
+                    print("ok: %s:%s - %s" % (issue.name, setter, s_msg))
                 except EUser as e:
-                    print("ERROR %s:%s - %s" % (issue.name, setter, e))
+                    print("ERROR: %s:%s - %s" % (issue.name, setter, e))
         else:
-            print("ERROR '%s' is not a valid issue" % dname)
+            print("ERROR: '%s' is not a valid issue" % dname)
 
 
-def li(scope, l_cols):
+def cmd_ls(scope, l_cols):
     SCOPE = []
     for dname in scope:
         if isdir(dname):
@@ -641,7 +627,7 @@ def li(scope, l_cols):
                 SCOPE.append(s)
                 issue = Issue(s)
                 lls.append(issue.li(l_cols))
-    p(lls2ls(lls))
+    printls(lls2ls(lls))
     return SCOPE
 
 
@@ -650,8 +636,6 @@ def li(scope, l_cols):
 
 
 
-
-#CONF = Conf()
 
 CONF = TypedKeyValue(   {   "show-hints": "i", 
                             "del-m": "s", 
@@ -663,8 +647,10 @@ CONF = TypedKeyValue(   {   "show-hints": "i",
                             "l-tags": ["n","t","s","p","o"],
                             "ll-tags": ["n","t","s","p","o","i","pn"]
                         })
+_CONF_dflt = copy.deepcopy(CONF)
 
-
+SCOPE = []
+scope_collect = True
 
 
 def json_rec(dname):    
@@ -678,24 +664,20 @@ def json_rec(dname):
 
     return d_RET
 
-def run(argv):
-    autoscope = True
 
-    SCOPE = []
+def run(argv):
+    global SCOPE
+    global scope_collect
 
     while len(argv) > 0:
         cmd = argv[0]
         argv.pop(0)
+        if cmd.startswith("--"):  scope_collect = False
 
-        if cmd in ["-new", "-n"]:
-            autoscope = False
+        if cmd in ["--add"]:
             if len(SCOPE) == 0:
-                if CONF.v("use_cur_dir") != 1:
-                    raise ESys("'-create' must be preceded with one or more directory names, e.g., 'myProject -create'")
-                else:
-                    SCOPE.append(".")
-            SCOPE = new(SCOPE)
-            # SCOPE = add(SCOPE)
+                raise ESys("'--add': no directories specified to add as tracked issues")  # todo better msg
+            cmd_add(SCOPE)
 
         elif cmd == "-TS":
             autoscope = False
@@ -708,32 +690,21 @@ def run(argv):
                 "'-TS' only operates on individual directories, as it creates tagspaces usually reserved for the project to level issue; call with one argument only")
             SCOPE = TS(SCOPE)
 
-        elif cmd in ["-info", "-i"]:
-            autoscope = False
+        elif cmd in ["--get"]:
             if len(SCOPE) == 0:
-                if CONF.v("use_cur_dir") != 1:
-                    raise ESys("'-info' must be preceded with one or more directory names, e.g., 'myProject -info'")
-                else:
-                    SCOPE.append(".")
-            SCOPE = info(SCOPE, cmd == "-i")
+                SCOPE.append(".")
+            cmd_get(SCOPE)  # todo select field
 
-        elif cmd in ["-tag", "-t"]:
-            autoscope = False
+        elif cmd in ["--set"]:
             if len(SCOPE) == 0:
-                if CONF.v("use_cur_dir") != 1:
-                    raise ESys("'-tag' must be preceded with one or more directory names, e.g., 'myProject -tag'")
-                else:
-                    SCOPE.append(".")
+                raise ESys("'--set': no issues specified to tag")
+                continue
             ls = get_argls(cmd, argv)
             tag(SCOPE, ls)
 
-        elif cmd == "-ts":
-            autoscope = False
+        elif cmd == "--tagspace-get":
             if len(SCOPE) == 0:
-                if CONF.v("use_cur_dir") != 1:
-                    raise ESys("'-ts' must be preceded with one or more directory names, e.g., 'myProject -ts'")
-                else:
-                    SCOPE.append(".")
+                SCOPE.append(".")
             for s in SCOPE:
                 if isiss(s):
                     issue = Issue(s)
@@ -749,50 +720,31 @@ def run(argv):
                 #else:
                 #    print("'%s' is a directory")
 
-        elif cmd in ["-l", "-ll"]:
-            autoscope = False
+        elif cmd in ["--ls", "--ll"]:
             if len(SCOPE) == 0:
-                if CONF.v("use_cur_dir") != 1:
-                    raise ESys("'-l' must be preceded with one or more directory names, e.g., 'myProject -li'")
-                else:
-                    SCOPE.append(".")
+                SCOPE.append(".")
             ls = get_argls(cmd, argv)
 
             if ls == []:
-                s_cols = CONF.v("l_tags")
-                if cmd == "-ll":
-                    s_cols = CONF.v("ll_tags")
-                ls = s_cols.split(" ")
+                ls = CONF.get("l-tags")
+                if cmd == "--ll":
+                    ls = CONF.get("ll-tags")
 
-            SCOPE = li(SCOPE, ls)
-
+            SCOPE = cmd_ls(SCOPE, ls)
 
 
 
 
-        elif cmd == "-set":
-            name, s_value = get_args(cmd, argv, ["s", "s"])
-            CONF.set(name, s_value)
 
 
 
-        elif cmd == "-p":
-            what = get_args(cmd, argv, ["s"])
-            if what == "conf":
-                print(CONF.dumps())
-            elif what == "tags":
-                if not isiss("."):
-                    print("Current dir is not a tracked issue")
-            else:
-                raise ESys("Invalid print option '%s'" % what)
 
-        elif cmd == "-version":
+        elif cmd == "--version":
             print(VERSION)
 
-        elif cmd == "-json":
+        elif cmd == "-json":  # todo
             tmp = json_rec(".")
             print(json.dumps(tmp, indent=4))
-
 
         elif cmd == "--config-set":
             ls = get_argls(cmd, argv)
@@ -809,9 +761,13 @@ def run(argv):
                     print(CONF.get(s))
 
         elif cmd == "--config-init":
-            config_init()
+            config_save(_CONF_dflt)
 
+        elif cmd == "--config-save":
+            config_save(CONF)
 
+        elif cmd == "--tagspace-init":
+            tagspace_init()
 
 
 
@@ -821,13 +777,13 @@ def run(argv):
             RESET()
 
         else:
-            if autoscope == True:
+            if scope_collect == True:
                 SCOPE.append(cmd)
             else:
                 raise ESys("Unknown command line option '%s'" % cmd)
 
-    if len(SCOPE) != 0 and autoscope == True:
-        info(SCOPE, False)
+    #if len(SCOPE) != 0 and autoscope == True:
+    #    info(SCOPE, False)
 
 
 
@@ -838,29 +794,19 @@ def main(argv):
     if len(argv) == 0:
         usage()
 
-    load_config = not ( argv[0] == "--config-ignore" )
-
-    if "--config-init" in argv:
-        if "--config-init" in argv[1:]:  raise ESys("'--config-init' must be used as first argumnent")
-        config_init()
-        argv.pop(0)
-
-    useconf = True
-    if argv[0] in ["--config-ignore", "--config-init", "--reset"]:
-        useconf = False
-        if argv[0] == "--config-ignore":
-            argv.pop(0)
-    if useconf:
+    if argv[0] != "--config-ignore":
         fname = Glob.path_conffile_default
         if isfile(fname):
             CONF.load(fname)
+    else:
+        argv.pop(0)
 
     run(argv)
 
 
 
 
-def init():
+def init0():
     dname = Glob.path_confdir
     if isdir(dname):
         printu("Config dir '%s' already exists" % dname)
@@ -868,14 +814,14 @@ def init():
         os.mkdir(dname)
         printu("Config dir '%s' created" % dname)
 
-def config_init():
-    init()
+def config_save(d):
+    init0()
     fname = Glob.path_conffile_default
-    ls2file(fname, [CONF.dumps()])
-    printu("Default config file '%s' created" % fname)
+    ls2file(fname, [d.dumps()])
+    printu("Config file '%s' created" % fname)
 
 def tagspace_init():
-    init()
+    init0()
     fname = Glob.path_tagspace_default
     ls2file(fname, TagTypeHandler.default())
     printu("Default tagspace '%s' created" % fname)

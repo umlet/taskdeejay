@@ -13,7 +13,7 @@ TaskDeejay allows to collaboratively track hierarchical tasks or *issues*.
 An issue is simply a directory with some special metadata in it.
 Each new or existing directory can be made into a tracked issue.
 Issues can then be tagged, e.g., with 'status=todo'.
-Issues directories can still contain normal files, for example deliverables, as well as other issues.
+Issue directories can still contain normal files, for example deliverables, as well as other issues.
 (They have unique internal IDs, so renaming directories will not break dependencies.)
 
 

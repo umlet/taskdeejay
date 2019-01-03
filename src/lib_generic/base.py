@@ -27,6 +27,16 @@ def printh(s, show):  # to suppress hints
         print("(" + s + ")")
 
 
+# todo
+# updated print helpers
+#pr_error(s):
+
+
+
+
+def printls(ls):
+    for s in ls:  print(s)
+
 class ESys(Exception):
     def __init__(self, msg):
         self.msg = msg
@@ -185,9 +195,6 @@ def exe(cmd, l_fname_in=[], l_fname_out=[], skip=True):
     return lo, le
 
 
-#def p(ls):
-#    for s in ls:
-#        print(s)
 
 
 

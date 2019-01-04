@@ -21,39 +21,14 @@ from lib_tj.issue import *
 from lib_tj.tagtype import *
 from lib_tj.usage import *
 
-# avoid broken pipe 
-#from signal import signal, SIGPIPE, SIG_DFL
-#signal(SIGPIPE, SIG_DFL)
+try:
+    # avoid broken pipe 
+    from signal import signal, SIGPIPE, SIG_DFL
+    signal(SIGPIPE, SIG_DFL)
+except ImportError:
+    pass
 
 VERSION = "TaskDeejay 0.11 (prototype), 2018-, Martin Auer, www.taskdeejay.com"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -64,29 +39,41 @@ def pr_i(s):  print_info(s, use_colors=CONF.get("use-colors"))
 def pr_o(s):  print_ok(s, use_colors=CONF.get("use-colors"))
 def pr_h(s):  print_hint(s, use_colors=CONF.get("use-colors"), show_hints=CONF.get("show-hints"))
 
-
 def msgs__dir_is_no_issue(dname):
     pr_e("Directory '%s' is not a tracked issue" % dname)
-    pr_h("Use '%s %s --add' to track it as issue" % (exename(), dname))
+    pr_h("Use '%s %s --add' to track this directory as issue" % (exename(), dname))
 
 def msgs__issue_dir_not_found(dname):
     pr_e("Issue directory '%s' not found" % dname)
 
+def msgs__dir_is_already_issue(dname):
+    pr_w("Directory '%s' is already a tracked issue" % dname)
 
-def TS(scope):
+def msgs__SUCC__dir_added(dname):
+    pr_o("Directory '%s' is now a tracked issue and can be tagged" % dname)
+    pr_h("Use '%s %s --set <tag>=<value>' to tag it" % (exename(), dname))
+    pr_h("Use '%s %s --tagspace-get' to see its valid tags" % (exename(), dname))
+
+
+
+
+def cmd_tscreate(scope):
     s = scope[0]
-    if not isiss(s):  raise ESys("'%s' not a valid issue; use '-new' to create or add as tracked item" % s)
 
-    tagspace = s + "/" + Glob.token_metadir + "/" + Glob.token_tagspace
-    if isfile(tagspace):  raise ESys("'%s' already contains the tagspace '%s'; delete it and re-run '-TS' if you want a new one" % (s, tagspace))
+    if isiss(s):
+        tagspace = s + "/" + Glob.token_metadir + "/" + Glob.token_tagspace
+        if isfile(tagspace):  
+            pr_w("Issue '%s' already has a tagspace ('%s')" % (s, tagspace))
+            return
 
-    ls2file(tagspace, TagTypeHandler.default())
-    printu("Tagspace '%s' created; edit this file to modify tag definitions for '%s' and all its (future) sub-issues" % (
-            tagspace, s))
+        ls2file(tagspace, TagTypeHandler.default())
+        pr_o("Tagspace '%s' created" % tagspace)
+        pr_h("Edit it to modify tag types for '%s' and its (future) sub-issues" % s)
 
-    return scope
-
-
+    elif isdir(s):
+        msgs__dir_is_no_issue(s)
+    else:
+        msgs__issue_dir_not_found(s)
 
 
 def cmd_add(scope):
@@ -96,14 +83,16 @@ def cmd_add(scope):
             continue
 
         if isiss(s):
-            pr_w("Directory '%s' is already added as tracked issue" % s)
+            #pr_w("Directory '%s' is already added as tracked issue" % s)
+            msgs__dir_is_already_issue(s)
             continue
 
         os.mkdir("%s/%s" % (s, Glob.token_metadir))
         uuid4 = str(uuid.uuid4())
         ls2file("%s/%s/%s" % (s, Glob.token_metadir, Glob.token_id_tag), [uuid4])
 
-        pr_o("Directory '%s' added as tracked issue" % s)
+        #pr_o("Directory '%s' added as tracked issue" % s)
+        msgs__SUCC__dir_added(s)
 
 
 def cmd_get(scope):  # todo list of fields
@@ -212,16 +201,10 @@ def run(argv):
                 raise ESys("'--add': no directories specified")  # todo better msg
             cmd_add(SCOPE)
 
-        elif cmd == "-TS":
-            autoscope = False
-            if len(SCOPE) == 0:
-                if CONF.v("use_cur_dir") != 1:
-                    raise ESys("'-TS' must be preceded with one or more directory names, e.g., 'myProject -TS'")
-                else:
-                    SCOPE.append(".")
-            if len(SCOPE) != 1:  raise ESys(
-                "'-TS' only operates on individual directories, as it creates tagspaces usually reserved for the project to level issue; call with one argument only")
-            SCOPE = TS(SCOPE)
+        elif cmd == "--tagspace-create":
+            if len(SCOPE) != 1:  
+                raise ESys("'--tagspace-create': only operates on a single issue directory; use '%s <dir> --tagspace-create'" % exename())
+            cmd_tscreate(SCOPE)
 
         elif cmd in ["--get"]:
             if len(SCOPE) == 0:
@@ -321,7 +304,7 @@ def main(argv):
         usage()
 
     if argv[0] != "--config-ignore":
-        fname = Glob.path_conffile_default
+        fname = Glob.path_conffile
         if isfile(fname):
             CONF.load(fname)
     else:
@@ -339,7 +322,7 @@ def init0():
 
 def config_save(d):
     init0()
-    fname = Glob.path_conffile_default
+    fname = Glob.path_conffile
     ls2file(fname, [d.dumps()])
     pr_o("Config file '%s' created" % fname)
 

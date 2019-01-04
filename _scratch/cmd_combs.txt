@@ -24,10 +24,12 @@ directory 'x' is not    a tracked issue
 
 
 --tagspace-init
-
 --tagspace-get
-
 --tagspace-create
+
+--tags-get
+--tags-create
+--tags-init
 
 --reset
 
@@ -38,24 +40,14 @@ directory 'x' is not    a tracked issue
 
 
 
-tj  issue1 issue2  --tag tname1=foo tname2=bar
 
 tj  remove??? [how to best unambiguate?]
 
-
-
-tj  ls
-tj  ls -- name tagspace
--- or --
 tj  ls --get name tagspace  [also bad/inconsistent/double printout]
 
-tj  ll
 
 
 
-tj  --config-get
-
-tj  --config-set
 
 
 

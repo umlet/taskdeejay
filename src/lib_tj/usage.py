@@ -66,7 +66,7 @@ Configuration:
 
 >{EXENAME} --config-get                                         # print config settings
 >{EXENAME} --config-set <variable> <value1> [<value2> ..]       # temporarily override config variable
-
+                                  ###TODO### same syntax as tags???
 """
     print(msg.replace("{EXENAME}", exename()), file=sys.stderr, end="")
     sys.exit(2)

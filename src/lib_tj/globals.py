@@ -8,7 +8,7 @@ class Glob():
     path_home = expanduser("~")
     name_confdir = ".tj"
     path_confdir = path_home + "/" + name_confdir
-    name_conffile_default = "config.json" #todo conf_user_default
-    path_conffile_default = path_confdir + "/" + name_conffile_default
+    name_conffile = "config.json"
+    path_conffile = path_confdir + "/" + name_conffile
     path_tagspace_default = path_confdir + "/" + token_tagspace
 

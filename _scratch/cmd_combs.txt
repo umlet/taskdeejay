@@ -1,3 +1,20 @@
+### notations
+
+directory 'x' not found
+
+directory 'x' is not    a tracked issue
+                        -a taggable task
+                        -taggable
+
+
+
+
+
+
+
+
+### command experimenter
+
 --config-init  [default]
 --config-get
 --config-set
@@ -43,28 +60,15 @@ tj  --config-set
 
 
 tagspace:
-tj  ls dir1 dir2 -- tagspace  #use ls and tagspace as potential tag;  UGLY, and not really working because on subdirs
-tj  info dir1 dir2 -- tagspace
 
-tj  tag  (maybe just shows infos of valid tags/content of tagspace)
+!tagspace-location
 
 tj  issue1 --ls tagspace  [better! than below]
-tj  issue1 --tag-get tagspace
+tj  issue1 --get tagspace
 
-tj  tagspace-get  [??????]
-
-
+tj  --tagspace-get
 
 
 
 
-#optional
-tj  new issue1 issue2   [required at all?]
 
-
-
-
-###all
-
-init
-reset
